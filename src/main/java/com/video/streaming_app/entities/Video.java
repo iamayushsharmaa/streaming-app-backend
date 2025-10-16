@@ -3,6 +3,7 @@ package com.video.streaming_app.entities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "yt_videos")
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Video {
     @Id
     private String videoId;
