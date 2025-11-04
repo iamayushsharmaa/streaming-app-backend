@@ -6,6 +6,7 @@ import com.video.streaming_app.entities.Video;
 import com.video.streaming_app.payload.CustomMessage;
 import com.video.streaming_app.service.VideoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
@@ -125,7 +126,6 @@ public class VideoController {
         inputStream = Files.newInputStream(path);
         inputStream.skip(rangeStart);
 
-
         long contentLength = rangeEnd - rangeStart + 1;
 
         byte[] data = new byte[(int) contentLength];
@@ -139,11 +139,49 @@ public class VideoController {
         headers.add("X-Content-Type-Options", "nosniff");
         headers.setContentLength(contentLength);
 
-
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .headers(headers)
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(new ByteArrayResource(data));
     }
 
+    @Value("${file.video.hsl}")
+    private String HSL_DIR;
+
+    @GetMapping("/{videoId}/master.m3u8")
+    public ResponseEntity<Resource> serverMasterFile(
+            @PathVariable String videoId
+    ) {
+        Path path = Paths.get(HSL_DIR, videoId, "master.m3u8");
+
+        if (!Files.exists(path)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Resource resource = new FileSystemResource(path);
+        return ResponseEntity
+                .ok()
+                .header(
+                        HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl"
+                )
+                .body(resource);
+    }
+
+    @GetMapping("/{videoId}/{segment}.ts")
+    public ResponseEntity<Resource> serveSegments(
+            @PathVariable String videoId,
+            @PathVariable String segment
+    ) {
+        Path path = Paths.get(HSL_DIR, videoId, segment + ".ts");
+
+        if (!Files.exists(path)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        Resource resource = new FileSystemResource(path);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "video/mp2t")
+                .body(resource);
+
+    }
 }
